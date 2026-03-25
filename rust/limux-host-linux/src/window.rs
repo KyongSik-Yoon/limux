@@ -1730,7 +1730,6 @@ fn add_workspace_from_state(state: &State, workspace: &WorkspaceState) {
         let s = state.borrow();
         s.shortcuts.clone()
     };
-    let mut s = state.borrow_mut();
     let id = uuid::Uuid::new_v4().to_string();
     let stack_name = format!("ws-{id}");
     let working_dir = workspace
@@ -1738,6 +1737,7 @@ fn add_workspace_from_state(state: &State, workspace: &WorkspaceState) {
         .as_deref()
         .or(workspace.cwd.as_deref());
     let root = build_workspace_root(state, &shortcuts, &id, working_dir, Some(&workspace.layout));
+    let mut s = state.borrow_mut();
 
     s.stack.add_named(&root, Some(&stack_name));
 
