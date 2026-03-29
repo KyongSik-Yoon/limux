@@ -5,6 +5,7 @@ members = [
   "rust/limux-control",
   "rust/limux-cli",
   "rust/limux-ghostty-sys",
+  "rust/limux-ghostty-vt-sys",
   "rust/limux-host-linux",
 ]
 resolver = "2"

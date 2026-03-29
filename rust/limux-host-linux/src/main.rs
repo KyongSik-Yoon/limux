@@ -2,8 +2,10 @@ mod app_config;
 mod keybind_editor;
 mod layout_state;
 mod pane;
+mod pty;
 mod shortcut_config;
 mod terminal;
+mod vt_terminal;
 mod window;
 
 use adw::prelude::*;

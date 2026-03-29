@@ -20,6 +20,10 @@ libadwaita = "0.9"
 uuid = { version = "1", features = ["v4"] }
 webkit6 = { version = "0.6", optional = true }
 limux-ghostty-sys = { path = "../limux-ghostty-sys" }
+limux-ghostty-vt-sys = { path = "../limux-ghostty-vt-sys" }
+rustix = { version = "1", features = ["pty", "termios", "process", "stdio"] }
+libc = "0.2"
+pangocairo = "0.22"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 dirs = "6"

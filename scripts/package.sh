@@ -319,6 +319,7 @@ echo "  -> dist/${PKG_BASE}.tar.gz"
 # =========================================================================
 # 2. Debian package
 # =========================================================================
+if command -v dpkg-deb &>/dev/null; then
 echo ""
 echo "--- Building .deb ---"
 DEB_ROOT="$STAGE/deb"
@@ -373,6 +374,10 @@ chmod 755 "$DEB_ROOT/DEBIAN/postrm"
 DEB_FILE="$OUT_DIR/limux_${VERSION}_${DEB_ARCH}.deb"
 dpkg-deb --build --root-owner-group "$DEB_ROOT" "$DEB_FILE"
 echo "  -> dist/limux_${VERSION}_${DEB_ARCH}.deb"
+else
+echo ""
+echo "--- Skipping .deb (dpkg-deb not found) ---"
+fi
 
 # =========================================================================
 # 3. AppImage
