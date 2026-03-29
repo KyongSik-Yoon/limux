@@ -20,20 +20,69 @@ use crate::pty::{self, PtyHandle};
 // Public API (mirrors terminal.rs interface)
 // -------------------------------------------------------------------
 
-pub struct VtTerminalWidget {
+pub struct TerminalWidget {
     pub overlay: gtk::Overlay,
-    pub handle: VtTerminalHandle,
+    pub handle: TerminalHandle,
 }
 
-pub struct VtTerminalHandle {
+#[derive(Clone)]
+pub struct TerminalHandle {
     inner: Rc<VtTerminalInner>,
 }
 
-pub struct VtTerminalCallbacks {
+impl TerminalHandle {
+    pub fn replace_callbacks(&self, callbacks: TerminalCallbacks) {
+        *self.inner.callbacks.borrow_mut() = callbacks;
+    }
+
+    pub fn perform_binding_action(&self, _action: &str) -> bool {
+        // TODO: implement copy/paste/clear via direct terminal/pty interaction
+        false
+    }
+
+    pub fn show_find(&self) -> bool {
+        false // TODO
+    }
+
+    pub fn find_next(&self) -> bool {
+        false
+    }
+
+    pub fn find_previous(&self) -> bool {
+        false
+    }
+
+    pub fn hide_find(&self) -> bool {
+        false
+    }
+
+    pub fn use_selection_for_find(&self) -> bool {
+        false
+    }
+}
+
+pub struct TerminalCallbacks {
     pub on_title_changed: Box<dyn Fn(&str)>,
     pub on_pwd_changed: Box<dyn Fn(&str)>,
+    pub on_desktop_notification: Box<dyn Fn(&str, &str)>,
     pub on_bell: Box<dyn Fn()>,
     pub on_close: Box<dyn Fn()>,
+    pub on_split_right: Box<dyn Fn()>,
+    pub on_split_down: Box<dyn Fn()>,
+    pub on_open_keybinds: Box<dyn Fn(&gtk::Widget)>,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct TerminalOptions {
+    pub hover_focus: bool,
+}
+
+/// No-op for VT mode (no global ghostty app needed).
+pub fn init_ghostty() {}
+
+/// Sync color scheme across all VT terminals.
+pub fn sync_color_scheme(_dark: bool) {
+    // TODO: update default colors on all active terminals
 }
 
 struct VtTerminalInner {
@@ -45,7 +94,7 @@ struct VtTerminalInner {
     key_encoder: Cell<GhosttyKeyEncoder>,
     pty: RefCell<Option<PtyHandle>>,
     draw_area: gtk::DrawingArea,
-    callbacks: RefCell<VtTerminalCallbacks>,
+    callbacks: RefCell<TerminalCallbacks>,
     cols: Cell<u16>,
     rows: Cell<u16>,
     cell_width: Cell<f64>,
@@ -89,11 +138,12 @@ impl Drop for VtTerminalInner {
     }
 }
 
-/// Create a VT-based terminal widget.
-pub fn create_vt_terminal(
-    working_directory: Option<String>,
-    callbacks: VtTerminalCallbacks,
-) -> Option<VtTerminalWidget> {
+/// Create a VT-based terminal widget (matches terminal::create_terminal API).
+pub fn create_terminal(
+    working_directory: Option<&str>,
+    _options: TerminalOptions,
+    callbacks: TerminalCallbacks,
+) -> TerminalWidget {
     // Create ghostty terminal
     let mut terminal: GhosttyTerminal = ptr::null_mut();
     let opts = GhosttyTerminalOptions {
@@ -104,7 +154,6 @@ pub fn create_vt_terminal(
     let res = unsafe { ghostty_terminal_new(ptr::null(), &mut terminal, opts) };
     if res != GHOSTTY_SUCCESS {
         eprintln!("limux-vt: failed to create ghostty terminal (err={res})");
-        return None;
     }
 
     // Create render state
@@ -235,7 +284,7 @@ pub fn create_vt_terminal(
     // Spawn PTY on realize
     {
         let inner = inner.clone();
-        let wd = working_directory;
+        let wd = working_directory.map(|s| s.to_string());
         draw_area.connect_realize(move |da| {
             // Measure font metrics using widget's pango context
             measure_font_metrics(da, &inner);
@@ -277,10 +326,10 @@ pub fn create_vt_terminal(
         });
     }
 
-    Some(VtTerminalWidget {
+    TerminalWidget {
         overlay,
-        handle: VtTerminalHandle { inner },
-    })
+        handle: TerminalHandle { inner },
+    }
 }
 
 // -------------------------------------------------------------------

@@ -650,9 +650,9 @@ pub fn build_window(app: &adw::Application) {
     );
 
     let style_manager = adw::StyleManager::default();
-    crate::terminal::sync_color_scheme(style_manager.is_dark());
+    crate::vt_terminal::sync_color_scheme(style_manager.is_dark());
     style_manager.connect_dark_notify(|style_manager| {
-        crate::terminal::sync_color_scheme(style_manager.is_dark());
+        crate::vt_terminal::sync_color_scheme(style_manager.is_dark());
     });
 
     // Register custom icons — look for icons dir relative to the executable

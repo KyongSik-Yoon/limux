@@ -18,7 +18,8 @@ use webkit6::prelude::*;
 use crate::keybind_editor;
 use crate::layout_state::{PaneState, TabContentState, TabState as SavedTabState};
 use crate::shortcut_config::{NormalizedShortcut, ResolvedShortcutConfig, ShortcutId};
-use crate::terminal::{self, TerminalCallbacks};
+use crate::vt_terminal as terminal;
+use crate::vt_terminal::TerminalCallbacks;
 
 fn next_pane_id() -> u32 {
     static COUNTER: AtomicU32 = AtomicU32::new(1);

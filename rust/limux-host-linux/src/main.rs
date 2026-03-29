@@ -88,15 +88,7 @@ fn main() {
         return;
     }
 
-    // Ghostty requires desktop OpenGL, not GLES. Must disable GLES before
-    // GTK initializes, otherwise GDK may select a GLES context.
-    // This matches what Ghostty's own GTK apprt does in setGtkEnv().
-    append_env("GDK_DISABLE", "gles-api,vulkan");
-    append_env("GDK_DEBUG", "gl-disable-gles,vulkan-disable");
-
-    // Embedded Ghostty needs a resources directory to resolve named themes,
-    // terminfo, and shell integration. Prefer Limux-bundled resources but
-    // fall back to common system Ghostty install locations.
+    // Ghostty resources directory for themes and shell integration.
     set_ghostty_resources_env();
 
     // WebKitGTK's bubblewrap sandbox requires unprivileged user namespaces,
@@ -105,8 +97,8 @@ fn main() {
         std::env::set_var("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1");
     }
 
-    // Initialize Ghostty before GTK app starts
-    terminal::init_ghostty();
+    // VT-based terminal: no global ghostty app initialization needed.
+    vt_terminal::init_ghostty();
 
     let app = adw::Application::builder()
         .application_id(APP_ID)
