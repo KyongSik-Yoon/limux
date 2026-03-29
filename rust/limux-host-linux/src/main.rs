@@ -81,6 +81,63 @@ fn set_ghostty_resources_env() {
     }
 }
 
+fn suppress_gtk_theme_warnings() {
+    use std::ffi::CString;
+    use std::os::raw::{c_char, c_uint, c_void};
+
+    // GLib log handler signature
+    type GLogFunc = unsafe extern "C" fn(*const c_char, c_uint, *const c_char, *mut c_void);
+
+    extern "C" {
+        fn g_log_set_handler(
+            log_domain: *const c_char,
+            log_levels: c_uint,
+            log_func: GLogFunc,
+            user_data: *mut c_void,
+        ) -> c_uint;
+    }
+
+    unsafe extern "C" fn filter_handler(
+        domain: *const c_char,
+        level: c_uint,
+        message: *const c_char,
+        _user_data: *mut c_void,
+    ) {
+        let msg = if message.is_null() {
+            ""
+        } else {
+            std::ffi::CStr::from_ptr(message).to_str().unwrap_or("")
+        };
+        // Suppress "Theme parser error" warnings from missing CSS resources
+        if msg.contains("Theme parser error") {
+            return;
+        }
+        let dom = if domain.is_null() {
+            "Gtk"
+        } else {
+            std::ffi::CStr::from_ptr(domain).to_str().unwrap_or("Gtk")
+        };
+        // G_LOG_LEVEL_WARNING = 1 << 4 = 16
+        if level & 16 != 0 {
+            eprintln!("({dom}): WARNING: {msg}");
+        } else {
+            eprintln!("({dom}): {msg}");
+        }
+    }
+
+    let domain = CString::new("Gtk").unwrap();
+    // G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL = (1<<4) | (1<<3) = 0x18
+    const G_LOG_LEVEL_WARNING: c_uint = 1 << 4;
+    unsafe {
+        g_log_set_handler(
+            domain.as_ptr(),
+            G_LOG_LEVEL_WARNING,
+            filter_handler,
+            std::ptr::null_mut(),
+        );
+    }
+}
+
 fn main() {
     // Handle --version flag
     if std::env::args().any(|a| a == "--version" || a == "-v") {
@@ -96,6 +153,11 @@ fn main() {
     if std::env::var("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS").is_err() {
         std::env::set_var("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1");
     }
+
+    // Suppress GTK CSS "Theme parser error" warnings caused by missing system
+    // theme resources (e.g. Arc theme not installed). These are non-fatal and
+    // clutter stderr, and on some systems can cascade into crashes.
+    suppress_gtk_theme_warnings();
 
     // VT-based terminal: no global ghostty app initialization needed.
     vt_terminal::init_ghostty();

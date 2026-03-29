@@ -152,27 +152,42 @@ pub fn create_terminal(
         max_scrollback: 10_000,
     };
     let res = unsafe { ghostty_terminal_new(ptr::null(), &mut terminal, opts) };
-    if res != GHOSTTY_SUCCESS {
-        eprintln!("limux-vt: failed to create ghostty terminal (err={res})");
+    if res != GHOSTTY_SUCCESS || terminal.is_null() {
+        panic!("limux-vt: failed to create ghostty terminal (err={res})");
     }
 
     // Create render state
     let mut render_state: GhosttyRenderState = ptr::null_mut();
-    unsafe { ghostty_render_state_new(ptr::null(), &mut render_state) };
+    let res = unsafe { ghostty_render_state_new(ptr::null(), &mut render_state) };
+    if res != GHOSTTY_SUCCESS || render_state.is_null() {
+        panic!("limux-vt: failed to create render state (err={res})");
+    }
 
     // Create row iterator and cells (reusable)
     let mut row_iterator: GhosttyRenderStateRowIterator = ptr::null_mut();
-    unsafe { ghostty_render_state_row_iterator_new(ptr::null(), &mut row_iterator) };
+    let res = unsafe { ghostty_render_state_row_iterator_new(ptr::null(), &mut row_iterator) };
+    if res != GHOSTTY_SUCCESS || row_iterator.is_null() {
+        panic!("limux-vt: failed to create row iterator (err={res})");
+    }
 
     let mut row_cells: GhosttyRenderStateRowCells = ptr::null_mut();
-    unsafe { ghostty_render_state_row_cells_new(ptr::null(), &mut row_cells) };
+    let res = unsafe { ghostty_render_state_row_cells_new(ptr::null(), &mut row_cells) };
+    if res != GHOSTTY_SUCCESS || row_cells.is_null() {
+        panic!("limux-vt: failed to create row cells (err={res})");
+    }
 
     // Create key event and encoder
     let mut key_event: GhosttyKeyEvent = ptr::null_mut();
-    unsafe { ghostty_key_event_new(ptr::null(), &mut key_event) };
+    let res = unsafe { ghostty_key_event_new(ptr::null(), &mut key_event) };
+    if res != GHOSTTY_SUCCESS || key_event.is_null() {
+        panic!("limux-vt: failed to create key event (err={res})");
+    }
 
     let mut key_encoder: GhosttyKeyEncoder = ptr::null_mut();
-    unsafe { ghostty_key_encoder_new(ptr::null(), &mut key_encoder) };
+    let res = unsafe { ghostty_key_encoder_new(ptr::null(), &mut key_encoder) };
+    if res != GHOSTTY_SUCCESS || key_encoder.is_null() {
+        panic!("limux-vt: failed to create key encoder (err={res})");
+    }
 
     // Set default colors (dark theme)
     let bg = GhosttyColorRgb { r: 30, g: 30, b: 46 };
